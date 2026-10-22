@@ -2139,17 +2139,20 @@ window.__ModuleLoader__.load({
       // 约等于视口 < 800px）就整项消失，这正是「设置里没有会话回收站」的真正原因。
       // 25 落在 20（mnemon「Memory System」）与 30（cost-meter「Cost」）之间，
       // 属于最上面几项，任何能看见设置导航的窗口都能看见它。
-      ctx.slots.inject('settings.section', () =>
-        ctx.slots.register(
-          {
-            name: 'settings.section',
-            id: 'trash',
-            order: 25,
-            label: () => t('recycleBin'),
-          },
-          (props) => TrashTab({ ...props, ctx })
-        )
-      );
+      // 插件管理二级页（plugins.bundle.config）：回收站管理面板，不再占用设置页。
+      // 参考 dsh-context：配置命名空间由 configForms 服务托管；没有该服务时直接注册。
+      const registerPluginsPageCard = (env) => {
+        const cf = env && env.configForms;
+        const serve = cf && typeof cf.whileServed === 'function' ? (fn) => cf.whileServed(['session-trash'], fn) : (fn) => fn();
+        serve(() => ctx.slots.inject('plugins.bundle.config', () =>
+          ctx.slots.register(
+            { name: 'plugins.bundle.config', key: 'session-trash' },
+            (props) => TrashTab({ ...props, ctx })
+          )
+        ));
+      };
+      if (typeof ctx.inject === 'function') ctx.inject(['configForms'], registerPluginsPageCard);
+      else registerPluginsPageCard(ctx);
 
       ctx.slots.inject('conversation.session.header.actions', () =>
         ctx.slots.register(
