@@ -224,7 +224,9 @@ window.__ModuleLoader__.load({
     let hostTranslate;
 
     function attachHostLocale(ctx) {
-      hostLocale = typeof ctx?.get === 'function' ? ctx.get('locale') : undefined;
+      // 宿主暴露方式因版本而异：0.2.x 直接挂在 ctx.locale；旧版经 ctx.get('locale')。两种都试。
+      hostLocale = (ctx && ctx.locale && typeof ctx.locale.register === 'function') ? ctx.locale : undefined;
+      if (!hostLocale && typeof ctx?.get === 'function') { try { hostLocale = ctx.get('locale'); } catch { /* keep undefined */ } }
       if (!hostLocale || typeof hostLocale.register !== 'function' || typeof hostLocale.bind !== 'function') return;
       try {
         const dispose = hostLocale.register(LOCALE_NS, MESSAGES);
