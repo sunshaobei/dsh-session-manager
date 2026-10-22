@@ -1,0 +1,1613 @@
+/*
+ * dsh-session-recycle-bin — plugin stylesheet (client.css)
+ *
+ * Served by the host at GET /api/session-trash/client.css and injected by
+ * client.js as a <link rel="stylesheet">. All colors are CSS custom
+ * properties (design tokens) declared on :root; the dark palette applies
+ * under `body[data-ds-dark-theme]` (the resolved DSH appearance: light /
+ * dark / system, set by the host right after <body> opens) OR under
+ * `@media (prefers-color-scheme: dark)` (OS-level fallback), while an
+ * explicit light appearance restores the light palette via
+ * `body:not([data-ds-dark-theme])` — so inside DSH the app preference is
+ * authoritative, and the OS media query remains the fallback without it.
+ *
+ * Naming: components use the `dsh-trash-` prefix; markdown blocks are styled
+ * with element selectors scoped under `.dsh-trash-md`.
+ */
+
+/* ------------------------------------------------------------------ */
+/*  Design tokens (light default; dark = app theme || OS fallback)   */
+/* ------------------------------------------------------------------ */
+
+:root {
+  /* FONT STACKS ARE RESOLVED AT THE POINT OF USE, NOT HERE.
+   *
+   * These two tokens are the last-resort fallbacks for hosts that do not
+   * publish the shell's own font tokens (older DSH builds, the standalone
+   * test harness). They are deliberately CONCRETE stacks: a custom property
+   * whose value contains var() is substituted at computed-value time on the
+   * element that DECLARES it, and that computed value is what inherits. So
+   *     :root { --dstrb-font: var(--dsw-font-family); }
+   * would freeze the :root-scoped stock stack and would NOT follow the
+   * body-level `--dsw-font-family` override that dsh-ui-font installs for the
+   * whole app — the plugin page would keep rendering in the default face.
+   * The effective font is therefore routed at the use sites (see the
+   * "Font routing" block below), where the inherited DSH tokens are visible.
+   */
+  --dstrb-font-fallback: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  --dstrb-mono-fallback: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+
+  /* Text */
+  --dstrb-text-strong: #1a202c;
+  --dstrb-text: #2d3748;
+  --dstrb-text-secondary: #4a5568;
+  /* #718096 measured 4.02:1 on the card surface and 3.83:1 on the subtle
+     surface (badges) — under the 4.5:1 text bar for the small labels that use
+     it. #5f6b7a clears it everywhere it lands: 5.43 on surface, 5.18 on
+     surface-subtle, 4.82 on surface-hover (the hovered badge), while staying
+     visibly weaker than --dstrb-text (11.99) and --dstrb-text-secondary (7.53). */
+  --dstrb-text-muted: #5f6b7a;
+  --dstrb-text-faint: #a0aec0;
+
+  /* Accents */
+  --dstrb-accent: #3182ce;
+  --dstrb-accent-veil: rgba(49, 130, 206, 0.15);
+  --dstrb-danger: #e53e3e;
+  --dstrb-danger-strong: #c53030;
+  --dstrb-danger-border: #feb2b2;
+  --dstrb-danger-veil: rgba(229, 62, 62, 0.08);
+  --dstrb-on-danger: #ffffff;
+
+  /* Surfaces */
+  --dstrb-surface: #ffffff;          /* cards, modals, menus            */
+  --dstrb-surface-subtle: #f7fafc;   /* inputs, badges, checked rows    */
+  --dstrb-surface-hover: #edf2f7;    /* cancel button, user bubble base */
+
+  /* Borders */
+  --dstrb-border: #e2e8f0;
+  --dstrb-border-light: #edf2f7;
+  --dstrb-border-hairline: #f0f4f8;
+
+  /* Structural lines that must stay IDENTIFIABLE, not decorative: WCAG 1.4.11
+     wants >= 3:1 from the boundary that carries the hierarchy — the default
+     borders sit at ~1.1:1, so the nesting cue uses this token instead.
+     #64748b on the light card surface (#ffffff) = 4.76:1. */
+  --dstrb-structure: #64748b;
+
+  /* Veils & overlays */
+  --dstrb-veil: rgba(0, 0, 0, 0.06);
+  --dstrb-overlay: rgba(0, 0, 0, 0.45);
+
+  /* Shadows */
+  --dstrb-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.03);
+  --dstrb-shadow-menu: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --dstrb-shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.2);
+  --dstrb-shadow-modal-sm: 0 10px 25px rgba(0, 0, 0, 0.2);
+  --dstrb-shadow-tooltip: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --dstrb-shadow-toast: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  /* Inverted tooltip */
+  --dstrb-tooltip-bg: #1a202c;
+  --dstrb-tooltip-text: #ffffff;
+  --dstrb-tooltip-muted: #a0aec0;
+
+  /* Toast (also inverted) */
+  --dstrb-toast-bg: #2d3748;
+  --dstrb-toast-text: #ffffff;
+  --dstrb-toast-btn-bg: #4a5568;
+  --dstrb-toast-btn-text: #63b3ed;
+
+  /* Markdown */
+  --dstrb-code-inline-bg: rgba(0, 0, 0, 0.07);
+  --dstrb-code-inline-text: #c53030;
+  --dstrb-quote-bg: rgba(0, 0, 0, 0.02);
+  --dstrb-quote-border: #cbd5e0;
+  --dstrb-bubble-user: #edf2f7;
+  /* Code blocks stay dark in both modes (editor-style) */
+  --dstrb-codeblock-bg: #1e293b;
+  --dstrb-codeblock-text: #e2e8f0;
+  --dstrb-codeblock-lang: #94a3b8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --dstrb-text-strong: #edf2f7;
+    --dstrb-text: #e2e8f0;
+    --dstrb-text-secondary: #cbd5e0;
+    --dstrb-text-muted: #a0aec0;
+    --dstrb-text-faint: #718096;
+
+    --dstrb-accent: #63b3ed;
+    --dstrb-accent-veil: rgba(99, 179, 237, 0.2);
+    --dstrb-danger: #fc8181;
+    --dstrb-danger-strong: #feb2b2;
+    --dstrb-danger-border: #9b2c2c;
+    --dstrb-danger-veil: rgba(252, 129, 129, 0.12);
+    --dstrb-on-danger: #1a202c;
+
+    --dstrb-surface: #1f2530;
+    --dstrb-surface-subtle: #262e3d;
+    --dstrb-surface-hover: #2c3444;
+
+    --dstrb-border: #3a4356;
+    --dstrb-border-light: #333c4e;
+    --dstrb-border-hairline: #2c3444;
+
+  /* Same >=3:1 rule on the dark card surface (#1f2530): #8a97a8 = 5.18:1. */
+  --dstrb-structure: #8a97a8;
+
+    --dstrb-veil: rgba(255, 255, 255, 0.08);
+    --dstrb-overlay: rgba(0, 0, 0, 0.65);
+
+    --dstrb-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --dstrb-shadow-menu: 0 4px 16px rgba(0, 0, 0, 0.5);
+    --dstrb-shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.55);
+    --dstrb-shadow-modal-sm: 0 10px 25px rgba(0, 0, 0, 0.5);
+    --dstrb-shadow-tooltip: 0 8px 24px rgba(0, 0, 0, 0.55);
+    --dstrb-shadow-toast: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+    --dstrb-tooltip-bg: #e2e8f0;
+    --dstrb-tooltip-text: #1a202c;
+    --dstrb-tooltip-muted: #4a5568;
+
+    --dstrb-toast-bg: #e2e8f0;
+    --dstrb-toast-text: #1a202c;
+    --dstrb-toast-btn-bg: #cbd5e0;
+    --dstrb-toast-btn-text: #1a202c;
+
+    --dstrb-code-inline-bg: rgba(255, 255, 255, 0.12);
+    --dstrb-code-inline-text: #fc8181;
+    --dstrb-quote-bg: rgba(255, 255, 255, 0.04);
+    --dstrb-quote-border: #4a5568;
+    --dstrb-bubble-user: #2c3444;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  DSH app theme — body[data-ds-dark-theme]                          */
+/* ------------------------------------------------------------------ */
+/*  The host app resolves its appearance preference (light / dark /    */
+/*  system) onto body[data-ds-dark-theme] as an inline script right    */
+/*  after <body> opens. This block ORs with the OS media query above:  */
+/*  either match resolves the dark palette.                            */
+/* ------------------------------------------------------------------ */
+
+body[data-ds-dark-theme] {
+  --dstrb-text-strong: #edf2f7;
+  --dstrb-text: #e2e8f0;
+  --dstrb-text-secondary: #cbd5e0;
+  --dstrb-text-muted: #a0aec0;
+  --dstrb-text-faint: #718096;
+
+  --dstrb-accent: #63b3ed;
+  --dstrb-accent-veil: rgba(99, 179, 237, 0.2);
+  --dstrb-danger: #fc8181;
+  --dstrb-danger-strong: #feb2b2;
+  --dstrb-danger-border: #9b2c2c;
+  --dstrb-danger-veil: rgba(252, 129, 129, 0.12);
+  --dstrb-on-danger: #1a202c;
+
+  --dstrb-surface: #1f2530;
+  --dstrb-surface-subtle: #262e3d;
+  --dstrb-surface-hover: #2c3444;
+
+  --dstrb-border: #3a4356;
+  --dstrb-border-light: #333c4e;
+  --dstrb-border-hairline: #2c3444;
+
+  /* Same >=3:1 rule on the dark card surface (#1f2530): #8a97a8 = 5.18:1. */
+  --dstrb-structure: #8a97a8;
+
+  --dstrb-veil: rgba(255, 255, 255, 0.08);
+  --dstrb-overlay: rgba(0, 0, 0, 0.65);
+
+  --dstrb-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --dstrb-shadow-menu: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --dstrb-shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.55);
+  --dstrb-shadow-modal-sm: 0 10px 25px rgba(0, 0, 0, 0.5);
+  --dstrb-shadow-tooltip: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --dstrb-shadow-toast: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  --dstrb-tooltip-bg: #e2e8f0;
+  --dstrb-tooltip-text: #1a202c;
+  --dstrb-tooltip-muted: #4a5568;
+
+  --dstrb-toast-bg: #e2e8f0;
+  --dstrb-toast-text: #1a202c;
+  --dstrb-toast-btn-bg: #cbd5e0;
+  --dstrb-toast-btn-text: #1a202c;
+
+  --dstrb-code-inline-bg: rgba(255, 255, 255, 0.12);
+  --dstrb-code-inline-text: #fc8181;
+  --dstrb-quote-bg: rgba(255, 255, 255, 0.04);
+  --dstrb-quote-border: #4a5568;
+  --dstrb-bubble-user: #2c3444;
+}
+
+/*  An explicit light preference restores the light palette even under  */
+/*  a dark OS, so the app preference stays authoritative inside DSH     */
+/*  (fixes near-white titles on a light page).                          */
+
+body:not([data-ds-dark-theme]) {
+  /* Fonts are NOT palette state: they are routed once, at the point of use,
+     in the "Font routing" block above — do not re-declare them here, or the
+     explicit-light branch would pin the plugin back to the stock stack. */
+
+  /* Text */
+  --dstrb-text-strong: #1a202c;
+  --dstrb-text: #2d3748;
+  --dstrb-text-secondary: #4a5568;
+  /* #718096 measured 4.02:1 on the card surface and 3.83:1 on the subtle
+     surface (badges) — under the 4.5:1 text bar for the small labels that use
+     it. #5f6b7a clears it everywhere it lands: 5.43 on surface, 5.18 on
+     surface-subtle, 4.82 on surface-hover (the hovered badge), while staying
+     visibly weaker than --dstrb-text (11.99) and --dstrb-text-secondary (7.53). */
+  --dstrb-text-muted: #5f6b7a;
+  --dstrb-text-faint: #a0aec0;
+
+  /* Accents */
+  --dstrb-accent: #3182ce;
+  --dstrb-accent-veil: rgba(49, 130, 206, 0.15);
+  --dstrb-danger: #e53e3e;
+  --dstrb-danger-strong: #c53030;
+  --dstrb-danger-border: #feb2b2;
+  --dstrb-danger-veil: rgba(229, 62, 62, 0.08);
+  --dstrb-on-danger: #ffffff;
+
+  /* Surfaces */
+  --dstrb-surface: #ffffff;          /* cards, modals, menus            */
+  --dstrb-surface-subtle: #f7fafc;   /* inputs, badges, checked rows    */
+  --dstrb-surface-hover: #edf2f7;    /* cancel button, user bubble base */
+
+  /* Borders */
+  --dstrb-border: #e2e8f0;
+  --dstrb-border-light: #edf2f7;
+  --dstrb-border-hairline: #f0f4f8;
+
+  /* Structural lines that must stay IDENTIFIABLE, not decorative: WCAG 1.4.11
+     wants >= 3:1 from the boundary that carries the hierarchy — the default
+     borders sit at ~1.1:1, so the nesting cue uses this token instead.
+     #64748b on the light card surface (#ffffff) = 4.76:1. */
+  --dstrb-structure: #64748b;
+
+  /* Veils & overlays */
+  --dstrb-veil: rgba(0, 0, 0, 0.06);
+  --dstrb-overlay: rgba(0, 0, 0, 0.45);
+
+  /* Shadows */
+  --dstrb-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.03);
+  --dstrb-shadow-menu: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --dstrb-shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.2);
+  --dstrb-shadow-modal-sm: 0 10px 25px rgba(0, 0, 0, 0.2);
+  --dstrb-shadow-tooltip: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --dstrb-shadow-toast: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  /* Inverted tooltip */
+  --dstrb-tooltip-bg: #1a202c;
+  --dstrb-tooltip-text: #ffffff;
+  --dstrb-tooltip-muted: #a0aec0;
+
+  /* Toast (also inverted) */
+  --dstrb-toast-bg: #2d3748;
+  --dstrb-toast-text: #ffffff;
+  --dstrb-toast-btn-bg: #4a5568;
+  --dstrb-toast-btn-text: #63b3ed;
+
+  /* Markdown */
+  --dstrb-code-inline-bg: rgba(0, 0, 0, 0.07);
+  --dstrb-code-inline-text: #c53030;
+  --dstrb-quote-bg: rgba(0, 0, 0, 0.02);
+  --dstrb-quote-border: #cbd5e0;
+  --dstrb-bubble-user: #edf2f7;
+  /* Code blocks stay dark in both modes (editor-style) */
+  --dstrb-codeblock-bg: #1e293b;
+  --dstrb-codeblock-text: #e2e8f0;
+  --dstrb-codeblock-lang: #94a3b8;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Font routing — follow the DSH shell, stay overridable              */
+/* ------------------------------------------------------------------ */
+/*
+ * The shell paints `<body>` with `font-family: var(--dsw-font-family, …)`
+ * and dsh-ui-font swaps that token at the body level to apply the user's
+ * Settings → 字体 choice (and `--ds-font-family-code` for code faces)
+ * across the whole app. Referencing those host tokens HERE — on the plugin
+ * roots, where the inherited values are already in scope — is what makes
+ * the settings page and the portaled toast track the app font, live.
+ *
+ * --dstrb-font / --dstrb-mono remain available as optional override hooks:
+ * a theme may still declare either one higher up the tree and it wins,
+ * because the fallback chain is evaluated at the use site.
+ */
+.dsh-trash-container,
+.dsh-trash-toast {
+  font-family: var(--dstrb-font, var(--dsw-font-family, var(--dstrb-font-fallback)));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Page container — width follows the window ratio (no fixed px cap) */
+/* ------------------------------------------------------------------ */
+
+.dsh-trash-container {
+  width: 90%;
+  padding: 24px;
+  margin: 0 auto;
+  color: var(--dstrb-text);
+  color-scheme: light dark; /* native select/checkbox follow the resolved mode */
+}
+
+/* App-theme-scoped overrides: native controls (select, checkbox,
+   scrollbars) follow the resolved plugin mode, matching the painted
+   surfaces even when the OS media query disagrees with the DSH
+   appearance preference. */
+body[data-ds-dark-theme] .dsh-trash-container { color-scheme: dark; }
+body:not([data-ds-dark-theme]) .dsh-trash-container { color-scheme: light; }
+
+.dsh-trash-container,
+.dsh-trash-container * {
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Header                                                             */
+/* ------------------------------------------------------------------ */
+
+.dsh-trash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dsh-trash-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dsh-trash-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--dstrb-text-strong);
+  display: flex;
+  align-items: center;
+}
+
+.dsh-trash-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--dstrb-text-muted);
+}
+
+/* Icons (size/margin/color moved out of JS inline styles) */
+.dsh-trash-icon-title { width: 20px; height: 20px; margin-right: 8px; color: var(--dstrb-text-secondary); flex: none; }
+.dsh-trash-icon-btn { width: 14px; height: 14px; margin-right: 6px; }
+.dsh-trash-icon-menu { width: 13px; height: 13px; margin-right: 6px; }
+.dsh-trash-icon-folder { width: 18px; height: 18px; color: var(--dstrb-text-muted); flex: none; }
+.dsh-trash-icon-badge { width: 13px; height: 13px; margin-right: 4px; color: var(--dstrb-text-muted); }
+.dsh-trash-icon-sm { width: 12px; height: 12px; margin-right: 3px; }
+
+/* ------------------------------------------------------------------ */
+/*  Search bar                                                         */
+/* ------------------------------------------------------------------ */
+
+.dsh-trash-search {
+  position: relative;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.dsh-trash-search-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 14px;
+  color: var(--dstrb-text-faint);
+  pointer-events: none;
+}
+
+.dsh-trash-search-input {
+  width: 100%;
+  padding: 10px 14px 10px 40px;
+  border-radius: 24px;
+  border: 1px solid var(--dstrb-border);
+  background-color: var(--dstrb-surface-subtle);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--dstrb-text);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.dsh-trash-search-input::placeholder {
+  color: var(--dstrb-text-muted);
+}
+
+.dsh-trash-search-input:focus {
+  border-color: var(--dstrb-accent);
+  box-shadow: 0 0 0 3px var(--dstrb-accent-veil);
+  background-color: var(--dstrb-surface);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Filter toolbar                                                     */
+/* ------------------------------------------------------------------ */
+
+/* Flex-wrap rather than `1fr 1fr auto`: a `1fr` grid track refuses to shrink
+   below its longest option, so at a 320px settings column the toolbar pushed
+   itself 6px past the panel. The controls now wrap instead of spilling. */
+.dsh-trash-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dsh-trash-toolbar > .dsh-trash-select {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.dsh-trash-toolbar > .dsh-trash-btn-danger-outline {
+  flex: 0 0 auto;
+}
+
+.dsh-trash-select {
+  width: 100%;
+  height: 36px;
+  padding: 0 32px 0 14px;
+  border-radius: 18px;
+  border: 1px solid var(--dstrb-border);
+  background-color: var(--dstrb-surface);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--dstrb-text-secondary);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+}
+
+.dsh-trash-btn-danger-outline {
+  height: 36px;
+  background-color: var(--dstrb-surface);
+  color: var(--dstrb-danger);
+  border: 1px solid var(--dstrb-danger-border);
+  padding: 0 16px;
+  border-radius: 18px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.dsh-trash-btn-danger-outline:hover {
+  background-color: var(--dstrb-danger-veil);
+}
+
+/* ------------------------------------------------------------------ */
+/*  States (loading / error / empty)                                   */
+/* ------------------------------------------------------------------ */
+
+.dsh-trash-state {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--dstrb-text-muted);
+  font-size: 14px;
+}
+
+.dsh-trash-state--error {
+  color: var(--dstrb-danger);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Workspace groups                                                   */
+/* ------------------------------------------------------------------ */
+
+.dsh-trash-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dsh-trash-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dsh-trash-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 2px;
+}
+
+.dsh-trash-group-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  margin-right: 12px;
+}
+
+.dsh-trash-group-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dstrb-text-strong);
+  white-space: nowrap;
+}
+
+.dsh-trash-group-path {
+  font-size: 11px;
+  color: var(--dstrb-text-muted);
+  font-family: var(--dstrb-mono, var(--ds-font-family-code, var(--dstrb-mono-fallback)));
+  margin-left: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}
+
+.dsh-trash-group-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.dsh-trash-group-count {
+  font-size: 12px;
+  color: var(--dstrb-text-muted);
+}
+
+.dsh-trash-more-wrap {
+  position: relative;
+}
+
+.dsh-trash-more-btn {
+  background: none;
+  border: none;
+  color: var(--dstrb-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.dsh-trash-more-btn:hover {
+  background: var(--dstrb-veil);
+  color: var(--dstrb-text-muted);
+}
+
+.dsh-trash-menu {
+  position: absolute;
+  right: 0;
+  top: 24px;
+  background-color: var(--dstrb-surface);
+  box-shadow: var(--dstrb-shadow-menu);
+  border-radius: 8px;
+  padding: 6px 0;
+  z-index: 100;
+  min-width: 180px;
+  border: 1px solid var(--dstrb-border-light);
+}
+
+.dsh-trash-menu-item--danger {
+  width: 100%;
+  text-align: left;
+  padding: 8px 14px;
+  background-color: transparent;
+  border: none;
+  color: var(--dstrb-danger);
+  font-size: 13px;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.dsh-trash-menu-item--danger:hover {
+  background-color: var(--dstrb-danger-veil);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Session cards                                                      */
+/* ------------------------------------------------------------------ */
+
+.dsh-trash-cards {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--dstrb-surface);
+  border-radius: 16px;
+  border: 1px solid var(--dstrb-border-light);
+  overflow: hidden;
+  box-shadow: var(--dstrb-shadow-card);
+  /* Query container for the narrow-panel rules below: the panel sits inside
+     the settings column, so its own width — not the viewport — decides what
+     the meta row can still show. */
+  container-type: inline-size;
+}
+
+/* ONE geometry at every width. A per-width padding/gap (plus a label that
+   reappears once the container grows) makes the title NARROWER on a wider
+   panel — a 400px list showed a 97px title while a 310px one showed 178px.
+   With the row's fixed costs constant, the title grows 1:1 with the panel. */
+.dsh-trash-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--dstrb-border-hairline);
+  transition: background-color 0.15s ease;
+  gap: 4px;
+}
+
+.dsh-trash-card--checked {
+  background-color: var(--dstrb-surface-subtle);
+}
+
+.dsh-trash-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--dstrb-border);
+  cursor: pointer;
+  accent-color: var(--dstrb-accent);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+/* The row gap already separates the card checkbox; an extra margin would come
+   straight out of the title's width. Declared AFTER the shared rule: same
+   specificity, so source order decides. */
+.dsh-trash-checkbox--card {
+  margin-right: 0;
+}
+
+.dsh-trash-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 0%;
+}
+
+.dsh-trash-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dstrb-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.dsh-trash-card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--dstrb-text-muted);
+  line-height: 1;
+}
+
+.dsh-trash-card-meta-item {
+  white-space: nowrap;
+  /* An item wider than the wrapping line must yield, not spill: without this a
+     squeezed card clips the timestamp by a couple of pixels inside its own
+     column (scrollWidth > clientWidth). */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dsh-trash-badge {
+  background-color: var(--dstrb-surface-subtle);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--dstrb-text-muted);
+  border: 1px solid var(--dstrb-border-light);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Sub-session badge: same box as the size badge, but it discloses the inline
+   list, so it is a real button rather than a label. No font-size of its own —
+   it inherits the badge's, which keeps both badges the same size. */
+.dsh-trash-badge--children {
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.dsh-trash-badge--children:hover {
+  background-color: var(--dstrb-surface-hover);
+  border-color: var(--dstrb-text-faint);
+}
+
+/* The open state is carried by the accent border and icon; the COUNT is 11px
+   text, and --dstrb-accent on the accent veil measures 3.22:1 — under the
+   4.5:1 text bar this count already had to meet. */
+.dsh-trash-badge--children[aria-expanded="true"] {
+  background-color: var(--dstrb-accent-veil);
+  border-color: var(--dstrb-accent);
+  color: var(--dstrb-text-strong);
+}
+
+.dsh-trash-badge--children[aria-expanded="true"] .dsh-trash-icon-badge {
+  color: var(--dstrb-accent);
+}
+
+.dsh-trash-badge--children:focus-visible {
+  outline: 2px solid var(--dstrb-accent);
+  outline-offset: 1px;
+}
+
+/* A reserved slot with tabular figures: the count is backfilled asynchronously,
+   so its digits must not resize the badge and shift the row under it. */
+.dsh-trash-badge-num {
+  min-width: 1.6em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.dsh-trash-card-actions {
+  display: flex;
+  align-items: center;
+  /* Icon-only buttons need less air than labelled pills; the width they give up
+     belongs to the title. */
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* The action LABELS are hidden at every width, not just on a narrow panel.
+   Re-showing them once the container grows is what made a wider panel show a
+   narrower title: a label costs ~123px, so the title would drop by that much
+   the moment they come back. The icons keep a full accessible name
+   (aria-label + title), which is the state P0-4 asks for on a narrow panel.
+   To trade this back, show .dsh-trash-btn-label under an @container rule and
+   accept that the title then steps DOWN at that width. */
+.dsh-trash-btn-label {
+  display: none;
+}
+
+.dsh-trash-btn-ghost .dsh-trash-icon-sm,
+.dsh-trash-btn-danger-text .dsh-trash-icon-sm {
+  margin-right: 0;
+}
+
+.dsh-trash-btn-ghost {
+  background-color: var(--dstrb-surface-subtle);
+  color: var(--dstrb-text-secondary);
+  border: 1px solid var(--dstrb-border);
+  padding: 4px 5px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  /* WCAG 2.5.8: an icon-only action keeps a >=24x24 target. */
+  min-width: 24px;
+  min-height: 24px;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.dsh-trash-btn-ghost:hover {
+  background-color: var(--dstrb-surface-hover);
+  border-color: var(--dstrb-text-faint);
+}
+
+.dsh-trash-btn-danger-text {
+  background-color: transparent;
+  color: var(--dstrb-danger);
+  border: none;
+  padding: 4px 5px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  /* WCAG 2.5.8: an icon-only action keeps a >=24x24 target. */
+  min-width: 24px;
+  min-height: 24px;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.dsh-trash-btn-danger-text:hover {
+  background-color: var(--dstrb-danger-veil);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Sub-session rows — full-width inline list under a card            */
+/* ------------------------------------------------------------------ */
+
+/* Sits between two cards of the list, so it owns the hairline separator the
+   card would otherwise paint. The nesting cue is the RAIL, not a background
+   tint: a tint cannot carry a boundary (a subtle fill is ~1.05:1 against the
+   card by construction), so the hierarchy hangs on a line that meets the
+   >=3:1 non-text contrast bar in both themes — see --dstrb-structure.
+   24px = the card's 10px padding + the 2px rail + the 12px indent. */
+.dsh-trash-children {
+  position: relative;
+  padding: 6px 10px 10px 24px;
+  background-color: transparent;
+  border-bottom: 1px solid var(--dstrb-border-hairline);
+}
+
+.dsh-trash-children::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 6px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 1px;
+  background-color: var(--dstrb-structure);
+}
+
+.dsh-trash-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  font-size: 0.92em;
+  color: var(--dstrb-text-secondary);
+}
+
+.dsh-trash-child--live {
+  /* No row-level opacity: fading the whole row drags the TITLE down with it
+     (2.81:1, below the 4.5:1 text bar). The running state is carried by the
+     pill plus a danger tint, and only the periphery is dimmed — below. */
+  background-color: var(--dstrb-danger-veil);
+  border-radius: 6px;
+  cursor: not-allowed;
+}
+
+.dsh-trash-child--live .dsh-trash-child-check,
+.dsh-trash-child--live .dsh-trash-child-meta,
+.dsh-trash-child--live .dsh-trash-child-delete {
+  opacity: 0.55;
+}
+
+.dsh-trash-child-check {
+  /* Smaller and muted next to the card's own checkbox: this one scopes a
+     cascade delete, that one picks sessions for a batch action. */
+  width: 13px;
+  height: 13px;
+  margin-right: 0;
+  accent-color: var(--dstrb-text-faint);
+}
+
+/* The title is the preview control (a real button), so it needs button
+   resets; it also has to outrank the meta line for the row's width. */
+.dsh-trash-child-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dsh-trash-child-title:hover {
+  color: var(--dstrb-text);
+  text-decoration: underline;
+}
+
+.dsh-trash-child-title:focus-visible {
+  outline: 2px solid var(--dstrb-accent);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+.dsh-trash-child-meta {
+  /* Shrinkable, so the title keeps its room: this is the first thing to give
+     way when the panel narrows. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dstrb-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.dsh-trash-child-live {
+  flex: none;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--dstrb-danger-border);
+  background-color: var(--dstrb-surface);
+  color: var(--dstrb-danger);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+/* A 24x24 icon button, always visible: a hover-only affordance does not exist
+   on touch, and WCAG 2.5.8 asks for a >=24px target. */
+.dsh-trash-child-delete {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--dstrb-danger);
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.dsh-trash-child-delete:hover {
+  background-color: var(--dstrb-danger-veil);
+}
+
+.dsh-trash-child-delete:focus-visible {
+  outline: 2px solid var(--dstrb-accent);
+  outline-offset: 1px;
+}
+
+.dsh-trash-child-delete:disabled {
+  cursor: not-allowed;
+}
+
+.dsh-trash-child-delete-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 0;
+}
+
+/* Two placeholder rows: the grouping is fetched after the list paints, so an
+   expanded card holds its height instead of jumping when the rows arrive. */
+.dsh-trash-child--skeleton {
+  border-radius: 6px;
+  background-color: var(--dstrb-veil);
+  margin: 3px 0;
+}
+
+.dsh-trash-children-more {
+  display: block;
+  width: 100%;
+  padding: 4px 0 0;
+  border: none;
+  background: none;
+  color: var(--dstrb-accent);
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dsh-trash-children-empty {
+  padding: 4px 0;
+  color: var(--dstrb-text-muted);
+}
+
+/* ── Narrow panel ───────────────────────────────────────────────────
+   The container is the card list, so these fire on the panel's own width.
+   Priority is fixed: the turn count goes first, the timestamp second, then the
+   action LABELS (the icons stay — they keep their aria-label/title), and the
+   sub-session age last. The size badge and the sub-session badge are never
+   hidden: they are counts the row exists to show. */
+@container (max-width: 360px) {
+  .dsh-trash-card-meta-item--turns {
+    display: none;
+  }
+
+  /* Title first: the age gives way instead of squeezing the name. The row's
+     size and age stay in the TITLE BUTTON's accessible name, which is never
+     hidden — `display: none` here would drop them out of the accessibility
+     tree entirely, and a tooltip is not readable by keyboard or screen
+     reader. */
+  .dsh-trash-child-meta {
+    display: none;
+  }
+}
+
+@container (max-width: 320px) {
+  .dsh-trash-card-meta-item--time {
+    display: none;
+  }
+}
+
+/* Kept sub-sessions of a main session that is already gone: no restore is
+   offered for them, so the row reads as a bin shell, not as a card. */
+.dsh-trash-card--orphan {
+  background-color: var(--dstrb-surface-subtle);
+}
+
+.dsh-trash-tag-kept {
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--dstrb-border);
+  background-color: var(--dstrb-surface);
+  color: var(--dstrb-text-muted);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Hover info card (left/top set inline by JS, from the hovered TITLE) */
+/* ------------------------------------------------------------------ */
+/*
+ * Deliberately NOT the host tooltip language. `.dsh-trash-tooltip-host` is a
+ * short hint ON a button and follows the app's own tooltip tokens
+ * (--dsw-alias-tooltip-*), which are a DARK bubble in both themes — the host's
+ * choice for one-line hints. This card is a small PANEL of the recycle bin that
+ * the user reads and selects text from, so it is painted with the plugin's own
+ * theme surface: white in the light theme, #1f2530 in the dark one, like every
+ * other surface of this panel. The boundary uses the structure token
+ * (4.76:1 light / 5.18:1 dark), not a hairline.
+ */
+.dsh-trash-tooltip {
+  position: fixed;
+  z-index: 20000;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: min(380px, 92vw);
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--dstrb-surface);
+  color: var(--dstrb-text-strong);
+  /* The boundary is a real boundary, so it uses the structure token (>=3:1)
+     rather than a hairline that only reads as a smudge; the elevation shadow
+     underneath carries the same message. */
+  border: 1px solid var(--dstrb-structure);
+  box-shadow: var(--dstrb-shadow-tooltip);
+  /* Readable and selectable: the card is content, not a decoration. */
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Placement is decided in JS from the measured box; the transform only flips
+   the card to the row's other side. */
+.dsh-trash-tooltip--above {
+  transform: translateY(-100%);
+}
+
+.dsh-trash-tooltip--below {
+  transform: none;
+}
+
+.dsh-trash-tooltip-title {
+  font-size: 1em;
+  font-weight: 600;
+  color: inherit;
+  word-break: break-all;
+}
+
+.dsh-trash-tooltip-sub {
+  font-size: 0.86em;
+  color: var(--dstrb-text-muted);
+  font-family: var(--dstrb-mono, var(--ds-font-family-code, var(--dstrb-mono-fallback)));
+  word-break: break-all;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Footer                                                             */
+/* ------------------------------------------------------------------ */
+
+.dsh-trash-footer {
+  margin-top: 24px;
+  font-size: 12px;
+  color: var(--dstrb-text-muted);
+  text-align: right;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Modals                                                             */
+/* ------------------------------------------------------------------ */
+
+.dsh-trash-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--dstrb-overlay);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.dsh-trash-preview {
+  background-color: var(--dstrb-surface);
+  border-radius: 12px;
+  width: 680px;
+  max-width: 92vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--dstrb-shadow-modal);
+  overflow: hidden;
+}
+
+.dsh-trash-preview-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--dstrb-border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dsh-trash-preview-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dstrb-text-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsh-trash-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--dstrb-text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.dsh-trash-close:hover {
+  color: var(--dstrb-text-muted);
+}
+
+.dsh-trash-preview-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 70vh;
+  background-color: var(--dstrb-surface-subtle);
+}
+
+.dsh-trash-preview-state {
+  text-align: center;
+  padding: 30px;
+  color: var(--dstrb-text-muted);
+}
+
+.dsh-trash-modal {
+  background-color: var(--dstrb-surface);
+  border-radius: 12px;
+  padding: 24px;
+  width: 420px;
+  max-width: 92vw;
+  box-shadow: var(--dstrb-shadow-modal-sm);
+}
+
+.dsh-trash-modal-title {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dstrb-text-strong);
+}
+
+.dsh-trash-modal-body {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: var(--dstrb-text-secondary);
+  line-height: 1.5;
+}
+
+/* The cascade dialog names every sub-session it will erase; past a handful the
+   list scrolls inside the dialog rather than growing it. */
+.dsh-trash-modal-list {
+  margin: -8px 0 20px 0;
+  padding: 6px 10px;
+  max-height: 40vh;
+  overflow-y: auto;
+  border: 1px solid var(--dstrb-border-light);
+  border-radius: 8px;
+  background-color: var(--dstrb-surface-subtle);
+}
+
+.dsh-trash-modal-list-item {
+  color: var(--dstrb-text-secondary);
+  line-height: 1.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dsh-trash-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.dsh-trash-btn-cancel {
+  background-color: var(--dstrb-surface-hover);
+  color: var(--dstrb-text-secondary);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.dsh-trash-btn-cancel:hover {
+  background-color: var(--dstrb-border);
+}
+
+.dsh-trash-btn-confirm {
+  background-color: var(--dstrb-danger);
+  color: var(--dstrb-on-danger);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.dsh-trash-btn-confirm:hover {
+  background-color: var(--dstrb-danger-strong);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Message bubbles (preview modal)                                    */
+/* ------------------------------------------------------------------ */
+
+.dsh-trash-message {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dsh-trash-message-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.dsh-trash-message-role {
+  font-weight: 600;
+  color: var(--dstrb-text-secondary);
+}
+
+.dsh-trash-message-time {
+  color: var(--dstrb-text-muted);
+}
+
+.dsh-trash-bubble-user {
+  background-color: var(--dstrb-bubble-user);
+  color: var(--dstrb-text-strong);
+  padding: 12px 16px;
+  border-radius: 12px;
+  border-top-left-radius: 2px;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dsh-trash-bubble-assistant {
+  background-color: var(--dstrb-surface);
+  color: var(--dstrb-text);
+  padding: 14px 18px;
+  border-radius: 12px;
+  border-top-left-radius: 2px;
+  border: 1px solid var(--dstrb-border);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Lightweight markdown renderer                                      */
+/* ------------------------------------------------------------------ */
+
+.dsh-trash-md {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.dsh-trash-md p {
+  margin: 0 0 10px 0;
+  line-height: 1.65;
+}
+
+.dsh-trash-md h1 { font-size: 20px; font-weight: 600; margin: 16px 0 8px; line-height: 1.4; color: var(--dstrb-text-strong); }
+.dsh-trash-md h2 { font-size: 18px; font-weight: 600; margin: 14px 0 8px; line-height: 1.4; color: var(--dstrb-text-strong); }
+.dsh-trash-md h3 { font-size: 16px; font-weight: 600; margin: 12px 0 6px; line-height: 1.4; color: var(--dstrb-text-strong); }
+.dsh-trash-md h4 { font-size: 15px; font-weight: 600; margin: 12px 0 6px; line-height: 1.4; color: var(--dstrb-text-strong); }
+.dsh-trash-md h5 { font-size: 14px; font-weight: 600; margin: 10px 0 4px; line-height: 1.4; color: var(--dstrb-text-strong); }
+.dsh-trash-md h6 { font-size: 13px; font-weight: 600; margin: 10px 0 4px; line-height: 1.4; color: var(--dstrb-text-strong); }
+
+.dsh-trash-md ul,
+.dsh-trash-md ol {
+  margin: 6px 0 10px;
+  padding-left: 22px;
+}
+
+.dsh-trash-md li {
+  margin: 3px 0;
+  line-height: 1.6;
+}
+
+.dsh-trash-md blockquote {
+  border-left: 3px solid var(--dstrb-quote-border);
+  margin: 8px 0;
+  padding: 4px 12px;
+  color: var(--dstrb-text-secondary);
+  background-color: var(--dstrb-quote-bg);
+}
+
+.dsh-trash-md hr {
+  border: none;
+  border-top: 1px solid var(--dstrb-border);
+  margin: 14px 0;
+}
+
+.dsh-trash-md-code-inline {
+  background-color: var(--dstrb-code-inline-bg);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: var(--dstrb-mono, var(--ds-font-family-code, var(--dstrb-mono-fallback)));
+  font-size: 0.9em;
+  color: var(--dstrb-code-inline-text);
+}
+
+.dsh-trash-md-codeblock {
+  background-color: var(--dstrb-codeblock-bg);
+  color: var(--dstrb-codeblock-text);
+  padding: 12px 14px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 10px 0;
+  font-family: var(--dstrb-mono, var(--ds-font-family-code, var(--dstrb-mono-fallback)));
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dsh-trash-md-codeblock-content {
+  font-family: inherit;
+  font-size: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dsh-trash-md-lang {
+  font-size: 11px;
+  color: var(--dstrb-codeblock-lang);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.dsh-trash-md-link {
+  color: var(--dstrb-accent);
+  text-decoration: underline;
+}
+
+.dsh-trash-md-table-wrap {
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.dsh-trash-md-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+.dsh-trash-md-th {
+  border: 1px solid var(--dstrb-border);
+  padding: 6px 10px;
+  background-color: var(--dstrb-surface-subtle);
+  font-weight: 600;
+  text-align: left;
+}
+
+.dsh-trash-md-td {
+  border: 1px solid var(--dstrb-border);
+  padding: 6px 10px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Toast layer — host-matched surface                                 */
+/* ------------------------------------------------------------------ */
+/*
+ * Ported from @deepseek-ai/dsh-client-ui-primitives Toast.module.css. This
+ * hand-written bundle cannot import that package: primitives declares no
+ * `dsh.client`, so Vite inlines it into each consumer and it is neither a
+ * platform seed word nor a registered module-row factory — `require()` would
+ * miss the module table. Porting the spec is the only way to match it.
+ *
+ * Two things changed beyond styling:
+ *   - Placement is TOP-CENTRE, not a bottom-right card.
+ *   - The surface is dark in BOTH themes. The old --dstrb-toast-* pair flipped
+ *     to a LIGHT panel in dark mode, i.e. the exact opposite of the host.
+ * The host tokens lead with the plugin's own as fallbacks so older cohorts,
+ * which publish no --dsw-* palette, still render a readable toast.
+ */
+
+.dsh-trash-toast-container {
+  position: fixed;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Above the 1000 the image lightbox backdrop uses, as the host does. */
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  /* Announcements never intercept clicks; only the action text does. */
+  pointer-events: none;
+}
+
+.dsh-trash-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: min(640px, calc(100vw - 48px));
+  padding: 12px 16px;
+  border-radius: var(--dsw-radius-lg, 12px);
+  background: var(--dsw-alias-toast-bg, var(--dstrb-toast-bg));
+  color: var(--dsw-alias-toast-label, var(--dstrb-toast-text));
+  font-size: 14px;
+  line-height: 22px;
+  box-shadow: var(--dsw-shadow-lv3, var(--dstrb-shadow-toast));
+  pointer-events: none;
+  /* One value drives both the fade delay and the unmount timer below. */
+  animation:
+    dsh-trash-toast-in 160ms ease-out,
+    dsh-trash-toast-fade 1000ms ease var(--dsh-toast-hold, 3000ms) forwards;
+}
+
+@keyframes dsh-trash-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dsh-trash-toast-fade {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Reduced motion drops the slide-in; the delayed fade still ends the banner
+   before the timed unmount. */
+@media (prefers-reduced-motion: reduce) {
+  .dsh-trash-toast {
+    animation: dsh-trash-toast-fade 1000ms ease var(--dsh-toast-hold, 3000ms) forwards;
+  }
+}
+
+.dsh-trash-toast-undo {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  /* deepseek-400 reads as the action against the always-dark surface. */
+  color: var(--dsw-static-deepseek-400, var(--dstrb-toast-btn-text));
+  font: inherit;
+  cursor: pointer;
+  margin-inline: 3px;
+  /* The banner stays click-through; only this takes the pointer. */
+  pointer-events: auto;
+}
+
+.dsh-trash-toast-undo:hover {
+  opacity: 0.8;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Conversation-header delete action                                  */
+/* ------------------------------------------------------------------ */
+
+.dsh-trash-header-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 5px;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--dsw-alias-label-tertiary, var(--dstrb-text-muted));
+  opacity: 0.85;
+  transition: color 0.12s ease, background 0.12s ease, opacity 0.12s ease;
+}
+
+.dsh-trash-header-action:hover {
+  color: var(--dstrb-danger);
+  background: var(--dstrb-veil);
+  opacity: 1;
+}
+
+/* One-line label tooltip for the header action, replacing the native `title`
+   attribute: an OS-drawn bubble next to the host's themed tooltips read as
+   "unstyled plugin", and it cannot follow the palette or the motion setting.
+   Ported from @deepseek-ai/dsh-client-ui-primitives Tooltip.module.css for the
+   same reason the toast is (the package is inlined by Vite, so it cannot be
+   required from a hand-written bundle).
+   `translateX(-100%)` is the host's `side: bottom` + `align: end` transform,
+   so `left` carries the anchor's RIGHT edge. */
+.dsh-trash-tooltip-host {
+  position: fixed;
+  z-index: 100;
+  width: max-content;
+  max-width: 50vw;
+  padding: 3px 7px;
+  border-radius: var(--dsw-radius-sm, 4px);
+  background: var(--dsw-alias-tooltip-bg, var(--dstrb-tooltip-bg));
+  color: var(--dsw-static-neutral-bluish-00, var(--dstrb-tooltip-text));
+  font-size: 13px;
+  line-height: 20px;
+  white-space: pre-line;
+  /* Unbreakable tokens (paths, URLs) must not push past max-width. */
+  overflow-wrap: break-word;
+  pointer-events: none;
+  transform: translateX(-100%);
+  animation: dsh-trash-tooltip-in 150ms var(--ds-ease-in-out, ease-in-out);
+}
+
+@keyframes dsh-trash-tooltip-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dsh-trash-tooltip-host {
+    animation: none;
+  }
+}
