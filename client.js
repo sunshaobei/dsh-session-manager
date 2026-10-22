@@ -2138,11 +2138,11 @@ window.__ModuleLoader__.load({
       // 约等于视口 < 800px）就整项消失，这正是「设置里没有会话回收站」的真正原因。
       // 25 落在 20（mnemon「Memory System」）与 30（cost-meter「Cost」）之间，
       // 属于最上面几项，任何能看见设置导航的窗口都能看见它。
-      ctx.slots.inject('settings.section', () =>
+      ctx.slots.inject('plugins.item', () =>
         ctx.slots.register(
           {
-            name: 'settings.section',
-            id: 'trash',
+            name: 'plugins.item',
+            id: '@sunshaobei/dsh-session-manager',
             order: 25,
             label: () => t('recycleBin'),
           },
