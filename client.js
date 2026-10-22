@@ -252,7 +252,7 @@ window.__ModuleLoader__.load({
         active = hostLocale?.getLocale?.()?.active ?? hostLocale?.getSnapshot?.()?.active;
       } catch { /* service teardown — fall back to the browser */ }
       if (String(active || '').trim() !== '') return /^zh(?:-|$)/i.test(String(active)) ? 'zh' : 'en';
-      return 'zh'; // no host locale service — the desktop app is zh-CN, default to Chinese
+      return /^zh(?:-|$)/i.test(browserLocale()) ? 'zh' : 'en';
     }
 
     function t(key, params = {}) {
