@@ -1,6 +1,6 @@
 {
   "name": "@sunshaobei/dsh-session-manager",
-  "version": "3.0.9",
+  "version": "3.1.0",
   "description": "DSH 会话回收站：会话详情归档入口、回收站多选还原/彻底删除、活跃会话保护。 · Session trash & permanent delete for DeepSeek Harness.",
   "type": "module",
   "main": "index.js",
@@ -28,7 +28,10 @@
     "recycle-bin",
     "session-management"
   ],
-  "repository": "https://github.com/sunshaobei/dsh-session-manager.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sunshaobei/dsh-session-manager.git"
+  },
   "homepage": "https://github.com/sunshaobei/dsh-session-manager#readme",
   "bugs": {
     "url": "https://github.com/sunshaobei/dsh-session-manager/issues"
