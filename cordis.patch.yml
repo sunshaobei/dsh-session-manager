@@ -13,4 +13,4 @@
 # "./client", so dsh-client-modules serves that bundle into the browser.
 - insert:
     - id: session-trash
-      name: '@sunshaobei/dsh-session-manager'
+      name: 'dsh-session-manager'
