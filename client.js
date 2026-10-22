@@ -2139,17 +2139,30 @@ window.__ModuleLoader__.load({
       // 约等于视口 < 800px）就整项消失，这正是「设置里没有会话回收站」的真正原因。
       // 25 落在 20（mnemon「Memory System」）与 30（cost-meter「Cost」）之间，
       // 属于最上面几项，任何能看见设置导航的窗口都能看见它。
-      // 插件管理二级页（plugins.bundle.config）：回收站管理面板，不再占用设置页。
-      // 参考 dsh-context：配置命名空间由 configForms 服务托管；没有该服务时直接注册。
+      // 插件管理二级页（plugins.bundle.config，同 dsh-context）
+      const CFG_NS = 'session-trash'; // 与 cordis patch 行 id 一致
+      const settingsStore = (() => {
+        let form; let state = {}; const listeners = new Set();
+        const notify = () => listeners.forEach((fn) => fn());
+        return {
+          get state() { return state; },
+          subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+          attach(f) { form = f; try { state = { ...state, ...(f && f.get ? f.get() : {}) }; } catch {} notify(); let un; try { un = f.subscribe(() => { try { state = { ...state, ...(f.get ? f.get() : {}) }; } catch {} notify(); }); } catch {} return () => { if (un) un(); if (form === f) form = undefined; }; },
+          set(k, v) { state = { ...state, [k]: v }; notify(); if (form && typeof form.set === 'function') form.set(k, v).catch(() => {}); },
+        };
+      })();
       const registerPluginsPageCard = (env) => {
         const cf = env && env.configForms;
-        const serve = cf && typeof cf.whileServed === 'function' ? (fn) => cf.whileServed(['session-trash'], fn) : (fn) => fn();
-        serve(() => ctx.slots.inject('plugins.bundle.config', () =>
-          ctx.slots.register(
-            { name: 'plugins.bundle.config', key: 'session-trash' },
-            (props) => TrashTab({ ...props, ctx })
+        if (!cf || typeof cf.get !== 'function' || typeof cf.whileServed !== 'function') return;
+        ctx.effect(() => settingsStore.attach(cf.get(CFG_NS)), 'session-trash: config forms');
+        ctx.effect(() => cf.whileServed([CFG_NS], () =>
+          ctx.slots.inject('plugins.bundle.config', () =>
+            ctx.slots.register(
+              { name: 'plugins.bundle.config', key: CFG_NS, inject: () => ({ hooks: { sessionTrash: settingsStore }, set: (k, v) => settingsStore.set(k, v) }) },
+              (props) => TrashTab({ ...props, ctx })
+            )
           )
-        ));
+        ), 'session-trash: plugins-page card');
       };
       if (typeof ctx.inject === 'function') ctx.inject(['configForms'], registerPluginsPageCard);
       else registerPluginsPageCard(ctx);
