@@ -224,23 +224,28 @@ window.__ModuleLoader__.load({
     let hostTranslate;
 
     function attachHostLocale(ctx) {
-      // 宿主暴露方式因版本而异：0.2.x 直接挂在 ctx.locale；旧版经 ctx.get('locale')。两种都试。
-      hostLocale = (ctx && ctx.locale && typeof ctx.locale.register === 'function') ? ctx.locale : undefined;
-      if (!hostLocale && typeof ctx?.get === 'function') { try { hostLocale = ctx.get('locale'); } catch { /* keep undefined */ } }
+      try { hostLocale = ctx?.get?.('locale'); } catch { hostLocale = undefined; }
       if (!hostLocale || typeof hostLocale.register !== 'function' || typeof hostLocale.bind !== 'function') return;
+      let unsubLocale;
       try {
-        const dispose = hostLocale.register(LOCALE_NS, MESSAGES);
-        ctx.effect?.(() => dispose, 'session-trash: locale dictionaries');
-      } catch {
-        // A twin instance may already own the namespace; `bind` still resolves
-        // the same dictionaries, so fall through and probe below.
+        hostLocale.register(LOCALE_NS, MESSAGES);
+        const bindNow = () => {
+          try {
+            const bound = hostLocale.bind(LOCALE_NS);
+            // Trust the service only once OUR keys resolve through it — translate()
+            // returns the raw key when the namespace carries no dictionary.
+            if (bound('recycleBin') !== 'recycleBin') hostTranslate = bound;
+          } catch { /* keep the built-in table */ }
+        };
+        bindNow();
+        // 语言切换时重绑（同 mcp-manager 的 subscribe 模式）
+        if (typeof hostLocale.subscribe === 'function' && typeof hostLocale.getSnapshot === 'function') {
+          unsubLocale = hostLocale.subscribe(bindNow);
+        }
+      } catch (error) {
+        console.warn('[dsh-session-manager] locale 注册失败：', error);
       }
-      try {
-        const bound = hostLocale.bind(LOCALE_NS);
-        // Trust the service only once OUR keys resolve through it — translate()
-        // returns the raw key when the namespace carries no dictionary.
-        if (bound('recycleBin') !== 'recycleBin') hostTranslate = bound;
-      } catch { /* keep the built-in table */ }
+      ctx.effect?.(() => () => { if (unsubLocale) unsubLocale(); }, 'session-trash: locale dictionaries');
     }
 
     function browserLocale() {
