@@ -2139,8 +2139,9 @@ window.__ModuleLoader__.load({
       // 约等于视口 < 800px）就整项消失，这正是「设置里没有会话回收站」的真正原因。
       // 25 落在 20（mnemon「Memory System」）与 30（cost-meter「Cost」）之间，
       // 属于最上面几项，任何能看见设置导航的窗口都能看见它。
-      // 插件管理二级页（plugins.bundle.config，同 dsh-context）
-      const CFG_NS = 'session-trash'; // 与 cordis patch 行 id 一致
+      // 插件管理二级页（plugins.bundle.config，同 dsh-context）：
+      // key 必须等于插件包名（页面用 configured = bundles.has(pkg.name) 决定是否渲染配置区）。
+      const CFG_KEY = '@sunshaobei/dsh-session-manager';
       const settingsStore = (() => {
         let form; let state = {}; const listeners = new Set();
         const notify = () => listeners.forEach((fn) => fn());
@@ -2153,16 +2154,13 @@ window.__ModuleLoader__.load({
       })();
       const registerPluginsPageCard = (env) => {
         const cf = env && env.configForms;
-        if (!cf || typeof cf.get !== 'function' || typeof cf.whileServed !== 'function') return;
-        ctx.effect(() => settingsStore.attach(cf.get(CFG_NS)), 'session-trash: config forms');
-        ctx.effect(() => cf.whileServed([CFG_NS], () =>
-          ctx.slots.inject('plugins.bundle.config', () =>
-            ctx.slots.register(
-              { name: 'plugins.bundle.config', key: CFG_NS, inject: () => ({ hooks: { sessionTrash: settingsStore }, set: (k, v) => settingsStore.set(k, v) }) },
-              (props) => TrashTab({ ...props, ctx })
-            )
+        if (cf && typeof cf.get === 'function') { try { settingsStore.attach(cf.get(CFG_KEY)); } catch {} }
+        ctx.slots.inject('plugins.bundle.config', () =>
+          ctx.slots.register(
+            { name: 'plugins.bundle.config', key: CFG_KEY, inject: () => ({ hooks: { sessionTrash: settingsStore }, set: (k, v) => settingsStore.set(k, v) }) },
+            (props) => TrashTab({ ...props, ctx })
           )
-        ), 'session-trash: plugins-page card');
+        );
       };
       if (typeof ctx.inject === 'function') ctx.inject(['configForms'], registerPluginsPageCard);
       else registerPluginsPageCard(ctx);
