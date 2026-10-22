@@ -3,7 +3,7 @@
  * Hand-written `__ModuleLoader__` package shell for DeepSeek Harness.
  */
 window.__ModuleLoader__.load({
-  id: 'dsh-session-manager',
+  id: "@sunshaobei/dsh-session-manager",
   factory: (require) => {
     'use strict';
     const module = { exports: {} };
