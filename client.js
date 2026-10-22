@@ -2135,6 +2135,18 @@ window.__ModuleLoader__.load({
       // 约等于视口 < 800px）就整项消失，这正是「设置里没有会话回收站」的真正原因。
       // 25 落在 20（mnemon「Memory System」）与 30（cost-meter「Cost」）之间，
       // 属于最上面几项，任何能看见设置导航的窗口都能看见它。
+      // 设置页入口（与插件详情页面板并存）
+      ctx.slots.inject('settings.section', () =>
+        ctx.slots.register(
+          {
+            name: 'settings.section',
+            id: 'trash',
+            order: 25,
+            label: () => t('recycleBin'),
+          },
+          (props) => TrashTab({ ...props, ctx })
+        )
+      );
       // 插件管理二级页（plugins.bundle.config，同 dsh-context）：
       // key 必须等于插件包名（页面用 configured = bundles.has(pkg.name) 决定是否渲染配置区）。
       const CFG_KEY = '@sunshaobei/dsh-session-manager';
