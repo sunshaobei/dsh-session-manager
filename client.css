@@ -1611,3 +1611,8 @@ body:not([data-ds-dark-theme]) .dsh-trash-container { color-scheme: light; }
     animation: none;
   }
 }
+
+/* Embedded in the plugin detail page: drop the outer padding/margins — the page provides its own. */
+.dsh-trash-embedded { padding: 0 !important; margin: 0 !important; }
+.dsh-trash-embedded .dsh-trash-header { padding: 0 0 8px 0 !important; margin: 0 !important; }
+.dsh-trash-embedded .dsh-trash-title { display: none !important; }

@@ -1578,14 +1578,10 @@ window.__ModuleLoader__.load({
         return groupOrder.map((key) => groups.get(key)).filter(Boolean);
       }, [items, searchQuery, filterWorkspace, sortOrder, ctx]);
 
-      return h('div', { className: 'dsh-trash-container' },
-        // Header
+      return h('div', { className: 'dsh-trash-container dsh-trash-embedded' },
+        // Header (compact: only the archived count, no duplicated title)
         h('div', { className: 'dsh-trash-header' },
           h('div', { className: 'dsh-trash-header-left' },
-            h('h2', { className: 'dsh-trash-title' },
-              renderTrashIcon({ className: 'dsh-trash-icon-title' }),
-              t('recycleBin')
-            ),
             h('p', { className: 'dsh-trash-subtitle' }, t('archivedCount', { count: items.length }))
           )
         ),
