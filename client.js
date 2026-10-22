@@ -224,7 +224,8 @@ window.__ModuleLoader__.load({
     let hostTranslate;
 
     function attachHostLocale(ctx) {
-      try { hostLocale = ctx?.get?.('locale'); } catch { hostLocale = undefined; }
+      try { hostLocale = ctx.get('locale') ?? undefined; } catch { hostLocale = undefined; }
+      if (!hostLocale) { try { hostLocale = ctx.locale; } catch { hostLocale = undefined; } }
       if (!hostLocale || typeof hostLocale.register !== 'function' || typeof hostLocale.bind !== 'function') return;
       let unsubLocale;
       try {
@@ -2212,7 +2213,7 @@ window.__ModuleLoader__.load({
     }
 
     exports.apply = apply;
-    exports.inject = ['slots', 'connection', 'sessions', 'workspaces'];
+    exports.inject = ['slots', 'connection', 'sessions', 'workspaces', 'locale'];
 
     return module.exports;
   },
